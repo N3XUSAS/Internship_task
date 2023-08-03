@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="styles.css" />
+    <header>To-Do List</header>
+  </head>
+  <body>
+    <p>List of tasks</p>
+    <div>
+      <div style="padding: 10px; text-align: right; padding-right: 10%">
+        <h4>
+          Sort by:
+          <input
+            type="button"
+            id="submit"
+            value="Added"
+            class="button"
+            onclick="sortByAdition()"
+          />
+          <input
+            type="button"
+            id="submit"
+            value="Deadline"
+            class="button"
+            onclick="sortByDeadline()"
+          />
+          <input
+            type="button"
+            id="submit"
+            value="Completion"
+            class="button"
+            onclick="sortByCompletion()"
+          />
+        </h4>
+      </div>
+      <table id="myTable">
+        <thead>
+          <tr>
+            <th style="width: 60%">Description</th>
+            <th style="width: 20%">Time left</th>
+            <th style="width: 10%">Delete</th>
+            <th style="width: 10%">Done</th>
+          </tr>
+        </thead>
+        <tbody id="tasks"></tbody>
+      </table>
+    </div>
+    <br />
+    <p>Add a task</p>
+    <div>
+      <form action="" name="add" method="GET">
+        <table>
+          <tr>
+            <th style="width: 70%">Description</th>
+            <th style="width: 30%">Time left</th>
+          </tr>
+          <tr>
+            <td class="description">
+              <input
+                type="text"
+                id="addDescription"
+                maxlength="160"
+                class="textbox"
+              />
+            </td>
+            <td>
+              <input type="datetime-local" id="addTime" class="textbox" />
+            </td>
+          </tr>
+          <tr>
+            <td colspan="2">
+              <input
+                type="button"
+                id="submit"
+                value="Add task"
+                class="button"
+                style="width: 50%"
+                onclick="AddData(this.form)"
+              />
+            </td>
+          </tr>
+        </table>
+      </form>
+    </div>
+
+    <script>
+      const testdata = [
+        {
+          description: "Workout",
+          date: new Date("2023-08-04T12:00"),
+          isDone: false,
+          added: new Date("2023-08-03T11:00"),
+        },
+        {
+          description: "Go shoping",
+          date: new Date("2023-08-06T20:00"),
+          isDone: false,
+          added: new Date("2023-08-03T12:00"),
+        },
+        {
+          description: "Study for exam",
+          date: new Date("2023-08-07T09:00"),
+          isDone: false,
+          added: new Date("2023-08-03T12:01"),
+        },
+      ];
+      var elements = [];
+      var currentSort = "added";
+      init();
+
+      function init() {
+        if (JSON.parse(window.sessionStorage.getItem("tasks")) != null) {
+          elements = JSON.parse(window.sessionStorage.getItem("tasks"));
+          show();
+        } else {
+          window.sessionStorage.setItem("tasks", JSON.stringify(testdata));
+          elements = JSON.parse(window.sessionStorage.getItem("tasks"));
+          show();
+        }
+      }
+
+      function AddData(form) {
+        var des = form.addDescription.value;
+        var date = form.addTime.value;
+        var done = false;
+        var added = new Date().getTime();
+        if (des.length == 0) {
+          alert("Description can not be empty!");
+        } else {
+          const task = {
+            description: des,
+            date: date,
+            isDone: done,
+            added: added,
+          };
+          elements.push(task);
+          if (currentSort == "added") {
+            sortByAdition();
+          } else if (currentSort == "deadline") {
+            sortByDeadline();
+          } else {
+            sortByCompletion();
+          }
+          document.getElementById("addDescription").value = "";
+          document.getElementById("addTime").value = "";
+        }
+      }
+
+      function show() {
+        let line = "";
+        for (let i = 0; i < elements.length; i++) {
+          var checkbox = "";
+          var cross = "";
+          if (elements[i].isDone == true) {
+            checkbox =
+              '<input type="checkbox" onclick="update(this, ' +
+              i +
+              ')" checked />';
+            cross = '<tr><td style="text-decoration: line-through">';
+          } else {
+            checkbox =
+              '<input type="checkbox" onclick="update(this, ' + i + ')" />';
+            cross = "<tr><td>";
+          }
+          var time = "";
+          if (elements[i].date == "") {
+            time = "No limit";
+          } else {
+            var now = new Date().getTime();
+            var old = new Date(elements[i].date).getTime();
+            var left = old - now;
+            time += Math.floor(left / (1000 * 60 * 60 * 24)).toString() + "D. ";
+            time +=
+              Math.floor(
+                (left % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+              ).toString() + "H. ";
+            time +=
+              Math.floor((left % (1000 * 60 * 60)) / (1000 * 60)).toString() +
+              "M.";
+          }
+
+          line +=
+            cross +
+            elements[i].description +
+            "</td><td>" +
+            time +
+            "</td><td>" +
+            '<input type="button" class="delete" value="Delete" onclick="remove(' +
+            i +
+            ')">' +
+            "</td><td>" +
+            checkbox +
+            "</td></tr>";
+        }
+        document.getElementById("tasks").innerHTML = line;
+      }
+
+      function remove(index) {
+        if (confirm("Do you want to remove this item?") == true) {
+          elements.splice(index, 1);
+          window.sessionStorage.setItem("tasks", JSON.stringify(elements));
+          show();
+        }
+      }
+
+      function sortByAdition() {
+        elements.sort(function (a, b) {
+          return new Date(a.added).getTime() - new Date(b.added).getTime();
+        });
+        window.sessionStorage.setItem("tasks", JSON.stringify(elements));
+        show();
+        currentSort = "added";
+      }
+
+      function sortByDeadline() {
+        elements.sort(function (a, b) {
+          return new Date(a.date).getTime() - new Date(b.date).getTime();
+        });
+        window.sessionStorage.setItem("tasks", JSON.stringify(elements));
+        show();
+        currentSort = "deadline";
+      }
+
+      function sortByCompletion() {
+        elements.sort(function (a, b) {
+          return (a.isDone - b.isDone) * -1;
+        });
+        window.sessionStorage.setItem("tasks", JSON.stringify(elements));
+        show();
+        currentSort = "completion";
+      }
+
+      function update(checkbox, index) {
+        elements[index].isDone = !elements[index].isDone;
+        window.sessionStorage.setItem("tasks", JSON.stringify(elements));
+        show();
+      }
+    </script>
+  </body>
+</html>
